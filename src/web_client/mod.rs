@@ -32,4 +32,5 @@ pub fn get_client(config: &AppConfig) -> Box<dyn Client> {
 pub trait Client {
     async fn send_device_code(&self, device_code: &str) -> anyhow::Result<()>;
     async fn poll_for_token(&mut self, device_code: &str) -> anyhow::Result<TokenPollResponse>;
+    fn get_server_url(&self) -> String;
 }

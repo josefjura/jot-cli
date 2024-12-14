@@ -26,7 +26,7 @@ impl Default for Profile {
 }
 
 impl Profile {
-    pub fn from_path(profile: &PathBuf) -> anyhow::Result<Option<Self>> {
+    pub fn from_path(profile: &Path) -> anyhow::Result<Option<Self>> {
         if !profile.exists() {
             return Ok(None);
         }
@@ -48,6 +48,7 @@ impl Profile {
         Ok(Some(profile))
     }
 
+    #[expect(dead_code)]
     pub fn save(&self, profile_path: &str) -> anyhow::Result<()> {
         let content = toml::to_string(self).context("Failed to serialize profile")?;
 
@@ -65,7 +66,7 @@ pub fn get_profile_path(arg_profile: &Option<String>) -> PathBuf {
         d.join(DEFAULT_PROFILE_FILENAME).to_path_buf()
     });
 
-    let arg_path = arg_profile.clone().map(|p| PathBuf::from(p));
+    let arg_path = arg_profile.clone().map(PathBuf::from);
 
     arg_path
         .or(xdg_path)

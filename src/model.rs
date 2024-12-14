@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+#[expect(dead_code)]
 pub struct LoginResponse {
     pub token: String,
 }
@@ -7,7 +8,8 @@ pub struct LoginResponse {
 pub enum TokenPollResponse {
     Pending,
     Success(String),
-    Failure,
+    #[expect(dead_code)]
+    Failure(String),
 }
 
 #[derive(Serialize)]

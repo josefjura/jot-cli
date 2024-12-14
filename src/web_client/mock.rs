@@ -15,6 +15,8 @@ impl MockClient {
     }
 }
 
+const MOCK_URL: &str = "mocked_instance";
+
 #[async_trait]
 impl Client for MockClient {
     async fn send_device_code(&self, device_code: &str) -> anyhow::Result<()> {
@@ -40,5 +42,9 @@ impl Client for MockClient {
         self.response_counter += 1;
 
         Ok(crate::model::TokenPollResponse::Pending)
+    }
+
+    fn get_server_url(&self) -> String {
+        MOCK_URL.to_string()
     }
 }

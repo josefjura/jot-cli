@@ -8,7 +8,6 @@ use crate::{
     web_client::Client,
 };
 
-const API_URL: &str = "https://api.example.com";
 const POLLING_INTERVAL: Duration = Duration::from_secs(3);
 const MAX_POLLING_DURATION: Duration = Duration::from_secs(180); // 3 minutes
 
@@ -23,12 +22,17 @@ impl AuthFlow {
         // Generate a secure random device code
         let device_code = self.generate_device_code();
 
+        println!("Sending device code: {}", device_code);
+
         // Register the device code with the server
         self.register_device(client, &device_code).await?;
 
         // Generate and open the authentication URL
-        let auth_url = format!("{}/auth/{}", API_URL, device_code);
-        println!("Please visit this URL to login: {}", auth_url);
+        let auth_url = format!("{}/auth/page/{}", client.get_server_url(), device_code);
+        println!(
+            "Browser window should open, if not, please visit following URL to login: {}",
+            auth_url
+        );
 
         #[cfg(not(test))]
         webbrowser::open(&auth_url)?;
@@ -77,8 +81,8 @@ impl AuthFlow {
                 TokenPollResponse::Success(token) => {
                     return Ok(token);
                 }
-                TokenPollResponse::Failure => {
-                    anyhow::bail!("Authentication failed");
+                TokenPollResponse::Failure(message) => {
+                    anyhow::bail!("Authentication failed: {}", message);
                 }
             }
         }
@@ -86,6 +90,7 @@ impl AuthFlow {
         anyhow::bail!("Authentication timed out")
     }
 
+    #[expect(dead_code)]
     fn save_token(&self, token_path: &PathBuf, token: &str) -> anyhow::Result<()> {
         // Ensure the directory exists
         if let Some(parent) = token_path.parent() {
@@ -97,15 +102,15 @@ impl AuthFlow {
             access_token: token.to_string(),
         };
         let token_json = serde_json::to_string_pretty(&token_data)?;
-        fs::write(&token_path, token_json)?;
+        fs::write(token_path, token_json)?;
 
         // On Unix-like systems, set file permissions to 600
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
-            let mut perms = fs::metadata(&token_path)?.permissions();
+            let mut perms = fs::metadata(token_path)?.permissions();
             perms.set_mode(0o600);
-            fs::set_permissions(&token_path, perms)?;
+            fs::set_permissions(token_path, perms)?;
         }
 
         Ok(())

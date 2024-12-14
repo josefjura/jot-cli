@@ -25,11 +25,9 @@ impl Client for WebClient {
             device_code: device_code.to_string(),
         };
 
-        println!("Sending device code: {}", device_code);
-
         let response = self
             .client
-            .post(&format!("{}/auth/device", self.server_url))
+            .post(format!("{}/auth/device", self.server_url))
             .json(&data)
             .send()
             .await?;
@@ -44,7 +42,7 @@ impl Client for WebClient {
     async fn poll_for_token(&mut self, device_code: &str) -> anyhow::Result<TokenPollResponse> {
         let response = self
             .client
-            .get(&format!("{}/auth/status/{}", self.server_url, device_code))
+            .get(format!("{}/auth/status/{}", self.server_url, device_code))
             .send()
             .await?;
 
@@ -54,7 +52,11 @@ impl Client for WebClient {
                 Ok(TokenPollResponse::Success(token.access_token))
             }
             reqwest::StatusCode::ACCEPTED => Ok(TokenPollResponse::Pending),
-            _ => anyhow::bail!("Authentication failed"),
+            _ => anyhow::bail!("Authentication polling failed: {}", response.status()),
         }
+    }
+
+    fn get_server_url(&self) -> String {
+        self.server_url.clone()
     }
 }

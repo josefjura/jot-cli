@@ -1,3 +1,6 @@
+#![deny(clippy::expect_used, clippy::unwrap_used, clippy::panic)]
+#![warn(clippy::expect_used)]
+
 use crate::app_config::AppConfig;
 use anyhow::Context;
 use args::CliArgs;
@@ -37,8 +40,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     println!("Using profile: {:?}", profile_path);
                 }
                 let mut client = web_client::get_client(&config);
-                let _ = AuthFlow::new().login(client.as_mut()).await?;
-                println!("Logging in...");
+                let token = AuthFlow::new().login(client.as_mut()).await;
+
+                match token {
+                    Ok(_) => {
+                        println!("Access token received.");
+                    }
+                    Err(e) => {
+                        eprintln!("Error: {}", e);
+                    }
+                }
             }
             args::Command::Init => {
                 if config.profile_exists {
