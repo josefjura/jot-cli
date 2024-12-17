@@ -146,3 +146,24 @@ fn test_note_search_date() {
                 .and(contains("Note with special formatting:...")),
         );
 }
+
+#[test]
+fn test_note_search_tags() {
+    let ctx = TestContext::new("test_assets/profile/local.toml");
+
+    ctx.command()
+        .args(["note", "search", "--lines", "1", "--tag", "tag2"])
+        .assert()
+        .success()
+        .stdout(
+            predicate::str::contains("#1")
+                .not()
+                .and(contains("2024-01-01").not())
+                .and(contains("Short note").not()),
+        )
+        .stdout(
+            predicate::str::contains("#3")
+                .and(contains("2024-01-03"))
+                .and(contains("Note with special formatting:...")),
+        );
+}

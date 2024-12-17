@@ -64,6 +64,7 @@ impl Client for MockClient {
         let notes = vec![
             Note {
                 id: Some(1),
+                tags: "tag1,tag3".to_string(),
                 created_at: chrono::DateTime::parse_from_rfc3339("2024-01-01T10:00:00Z")
                     .unwrap()
                     .into(),
@@ -74,6 +75,7 @@ impl Client for MockClient {
             },
             Note {
                 id: Some(2),
+                tags: "tag2,tag3".to_string(),
                 created_at: chrono::DateTime::parse_from_rfc3339("2024-01-02T10:00:00Z")
                     .unwrap()
                     .into(),
@@ -85,6 +87,7 @@ impl Client for MockClient {
             },
             Note {
                 id: Some(3),
+                tags: "tag3,tag4".to_string(),
                 created_at: chrono::DateTime::parse_from_rfc3339("2024-01-03T10:00:00Z")
                     .unwrap()
                     .into(),

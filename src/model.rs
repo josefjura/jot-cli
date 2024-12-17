@@ -25,9 +25,10 @@ pub struct GetNotesResponse {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Note {
     pub id: Option<i64>,
+    pub content: String,
+    pub tags: String,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
-    pub content: String,
 }
 
 #[derive(Serialize)]
