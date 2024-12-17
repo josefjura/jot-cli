@@ -1,18 +1,26 @@
 use async_trait::async_trait;
+use serde_json::json;
 
-use crate::model::{DeviceCodeRequest, Token, TokenPollResponse};
+use crate::{
+    args::NoteSearchArgs,
+    model::{
+        CreateNoteResponse, DeviceCodeRequest, GetNotesResponse, Note, Token, TokenPollResponse,
+    },
+};
 
 use super::Client;
 
 pub struct WebClient {
     server_url: String,
+    token: Option<String>,
     client: reqwest::Client,
 }
 
 impl WebClient {
-    pub fn new(server_url: String) -> Self {
+    pub fn new(server_url: String, token: Option<String>) -> Self {
         Self {
             server_url,
+            token,
             client: reqwest::Client::new(),
         }
     }
@@ -54,6 +62,91 @@ impl Client for WebClient {
             reqwest::StatusCode::ACCEPTED => Ok(TokenPollResponse::Pending),
             _ => anyhow::bail!("Authentication polling failed: {}", response.status()),
         }
+    }
+
+    async fn create_note(
+        &mut self,
+        content: String,
+        _today: bool,
+    ) -> anyhow::Result<CreateNoteResponse> {
+        let real_token = match self.token {
+            Some(ref token) => token,
+            None => anyhow::bail!("No token available"),
+        };
+
+        let response = self
+            .client
+            .post(format!("{}/note", self.server_url))
+            .header("Content-Type", "application/json")
+            .header("Authorization", format!("Bearer {}", real_token))
+            .json(&json!({
+                "content": content
+            }))
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            println!("{:?}", response.text().await);
+            anyhow::bail!("Failed to create note");
+        }
+
+        let json = response.json::<CreateNoteResponse>().await?;
+
+        Ok(CreateNoteResponse {
+            id: json.id,
+            content: json.content,
+        })
+    }
+
+    async fn get_notes(&mut self) -> anyhow::Result<GetNotesResponse> {
+        let real_token = match self.token {
+            Some(ref token) => token,
+            None => anyhow::bail!("No token available"),
+        };
+
+        let response = self
+            .client
+            .get(format!("{}/note", self.server_url))
+            .header("Authorization", format!("Bearer {}", real_token))
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            anyhow::bail!("Failed to get notes");
+        }
+
+        // DEBUG RESPONSE
+        // let bytes = response.bytes().await?;
+        // println!("{:?}", std::str::from_utf8(&bytes)?);
+
+        // let notes: GetNotesResponse = serde_json::from_slice(&bytes)?;
+        let notes = response.json::<Vec<Note>>().await?;
+
+        Ok(GetNotesResponse { notes })
+    }
+
+    async fn search(&mut self, args: &NoteSearchArgs) -> anyhow::Result<GetNotesResponse> {
+        let real_token = match self.token {
+            Some(ref token) => token,
+            None => anyhow::bail!("No token available"),
+        };
+
+        let response = self
+            .client
+            .post(format!("{}/note/search", self.server_url))
+            .json(&args)
+            .bearer_auth(real_token)
+            .header("Content-Type", "application/json")
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            anyhow::bail!("Failed to seaarch for notes");
+        }
+
+        let notes = response.json::<Vec<Note>>().await?;
+
+        Ok(GetNotesResponse { notes })
     }
 
     fn get_server_url(&self) -> String {

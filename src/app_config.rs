@@ -16,6 +16,7 @@ pub struct AppConfig {
     pub profile_path: String,
     pub api_key_path: String,
     pub profile_exists: bool,
+    pub token: Option<String>,
 }
 
 impl Default for AppConfig {
@@ -28,6 +29,7 @@ impl Default for AppConfig {
             profile_path: "./".to_string(),
             api_key_path: format!("./{}", DEFAULT_API_KEY_FILENAME),
             profile_exists: false,
+            token: None,
         }
     }
 }
@@ -37,7 +39,13 @@ impl AppConfig {
         let defaults = AppConfig::default();
 
         let profile_server_url = profile.and_then(|p| p.server_url.as_ref());
-        let profile_api_key_path = profile.and_then(|p| p.api_key_path.as_ref());
+        let api_key_path = profile
+            .and_then(|p| p.api_key_path.as_ref())
+            .cloned()
+            .or(build_api_key_path(profile_path))
+            .unwrap_or(defaults.api_key_path);
+
+        let token = std::fs::read_to_string(&api_key_path).ok();
 
         let config = AppConfig {
             #[cfg(debug_assertions)]
@@ -53,10 +61,8 @@ impl AppConfig {
                 .server_url
                 .or(profile_server_url.cloned())
                 .unwrap_or(defaults.server_url),
-            api_key_path: profile_api_key_path
-                .cloned()
-                .or(build_api_key_path(profile_path))
-                .unwrap_or(defaults.api_key_path),
+            api_key_path,
+            token,
         };
 
         config
@@ -74,6 +80,8 @@ impl AppConfig {
         }
     }
 }
+
+
 
 fn build_api_key_path(profile_path: &Path) -> Option<String> {
     profile_path

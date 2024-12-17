@@ -48,8 +48,7 @@ impl Profile {
         Ok(Some(profile))
     }
 
-    #[expect(dead_code)]
-    pub fn save(&self, profile_path: &str) -> anyhow::Result<()> {
+    pub fn save(&self, profile_path: &Path) -> anyhow::Result<()> {
         let content = toml::to_string(self).context("Failed to serialize profile")?;
 
         std::fs::write(profile_path, content).context("Failed to write profile")?;

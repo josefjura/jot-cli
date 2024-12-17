@@ -7,7 +7,9 @@ use predicates::prelude::{
 };
 use tempfile::TempDir;
 
+pub mod asserts;
 mod e2e;
+pub mod test_context;
 
 #[test]
 fn test_profile_arg() {
@@ -15,7 +17,7 @@ fn test_profile_arg() {
 
     let assert = cmd
         .env("JOT_PROFILE", "bad_test.toml")
-        .args(&["--profile", "test_assets/profile/default.toml"])
+        .args(&["--profile-path", "test_assets/profile/default.toml"])
         .arg("config")
         .assert();
 
@@ -42,29 +44,6 @@ fn test_profile_env() {
         .stdout(
             contains(r#""profile_path": "test_assets/profile/default.toml""#)
                 .and(contains(r#""server_url": "asset_toml_server_url""#)),
-        )
-        .stderr(is_empty());
-}
-
-#[test]
-fn test_login() {
-    let mut cmd = Command::cargo_bin("jot-cli").unwrap();
-    let dir = TempDir::new().unwrap();
-    let dir_path = dir.path();
-    let file_path = dir_path.join(Path::new("local.toml"));
-    std::fs::copy("test_assets/profile/local.toml", &file_path).unwrap();
-
-    let assert = cmd
-        .env("JOT_PROFILE", file_path.to_str().unwrap())
-        .arg("-m")
-        // .args(&["--mock-param", "test_assets/profile/default.toml"])
-        .arg("login")
-        .assert();
-
-    assert
-        .success()
-        .stdout(
-            contains(r#""profile_path": "test_assets/profile/default.toml""#), //.and(contains(r#""server_url": "asset_toml_server_url""#)),
         )
         .stderr(is_empty());
 }

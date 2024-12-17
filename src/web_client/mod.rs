@@ -1,9 +1,13 @@
 use async_trait::async_trait;
 
-use crate::{app_config::AppConfig, model::TokenPollResponse};
+use crate::{
+    app_config::AppConfig,
+    args::NoteSearchArgs,
+    model::{CreateNoteResponse, GetNotesResponse, TokenPollResponse},
+};
 
 #[cfg(debug_assertions)]
-mod mock;
+pub mod mock;
 
 mod web;
 
@@ -14,10 +18,12 @@ pub fn get_client(config: &AppConfig) -> Box<dyn Client> {
     use web::WebClient;
 
     if config.mock_server {
-        println!("Mocking server requests");
         Box::new(MockClient::new())
     } else {
-        Box::new(WebClient::new(config.server_url.clone()))
+        Box::new(WebClient::new(
+            config.server_url.clone(),
+            config.token.clone(),
+        ))
     }
 }
 
@@ -32,5 +38,12 @@ pub fn get_client(config: &AppConfig) -> Box<dyn Client> {
 pub trait Client {
     async fn send_device_code(&self, device_code: &str) -> anyhow::Result<()>;
     async fn poll_for_token(&mut self, device_code: &str) -> anyhow::Result<TokenPollResponse>;
+    async fn create_note(
+        &mut self,
+        content: String,
+        today: bool,
+    ) -> anyhow::Result<CreateNoteResponse>;
+    async fn get_notes(&mut self) -> anyhow::Result<GetNotesResponse>;
+    async fn search(&mut self, args: &NoteSearchArgs) -> anyhow::Result<GetNotesResponse>;
     fn get_server_url(&self) -> String;
 }

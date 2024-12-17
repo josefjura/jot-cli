@@ -2,19 +2,20 @@
 #![warn(clippy::expect_used)]
 
 use crate::app_config::AppConfig;
-use anyhow::Context;
 use args::CliArgs;
-use auth::AuthFlow;
 use clap::Parser;
-use init::read_profile;
+use commands::{config::config_cmd, init::init_cmd, login::login_cmd, note::note_cmd};
 use profile::{get_profile_path, Profile};
 
 mod app_config;
 mod args;
 mod auth;
+mod commands;
+mod formatters;
 mod init;
 mod model;
 mod profile;
+mod utils;
 mod web_client;
 
 #[cfg(test)]
@@ -24,44 +25,17 @@ mod test;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = CliArgs::parse();
 
-    let profile_path = get_profile_path(&args.config.profile);
+    let profile_path = get_profile_path(&args.config.profile_path);
 
     if let Some(command) = args.command {
         let profile = Profile::from_path(&profile_path)?;
         let config = AppConfig::from_args(args.config, &profile_path, profile.as_ref());
         match command {
-            args::Command::Config => {
-                let json = serde_json::to_string_pretty(&config)?;
-                println!("{}", json);
-                return Ok(());
-            }
-            args::Command::Login => {
-                if config.profile_exists {
-                    println!("Using profile: {:?}", profile_path);
-                }
-                let mut client = web_client::get_client(&config);
-                let token = AuthFlow::new().login(client.as_mut()).await;
-
-                match token {
-                    Ok(_) => {
-                        println!("Access token received.");
-                    }
-                    Err(e) => {
-                        eprintln!("Error: {}", e);
-                    }
-                }
-            }
-            args::Command::Init => {
-                if config.profile_exists {
-                    println!("Using profile: {:?}", profile_path);
-                } else {
-                    println!("Profile will be written into '{:?}'", profile_path);
-                    let new_profile =
-                        read_profile(&config).context("An error during profile initialization")?;
-
-                    println!("New profile: {:?}", new_profile);
-                }
-            }
+            args::Command::Config => config_cmd(config)?,
+            args::Command::Init => init_cmd(&config, &profile_path)?,
+            args::Command::Login => login_cmd(config).await?,
+            args::Command::Note(subcommand) => note_cmd(&config, subcommand).await?,
+            args::Command::Down(args) => note_cmd(&config, args::NoteCommand::Add(args)).await?,
         }
     }
 

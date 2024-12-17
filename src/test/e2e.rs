@@ -1,70 +1,148 @@
-use std::path::Path;
-
 use assert_cmd::Command;
-use predicates::prelude::{
-    predicate::str::{contains, is_empty},
-    PredicateBooleanExt,
-};
-use tempfile::TempDir;
 
-#[test]
-fn test_profile_arg() {
-    let mut cmd = Command::cargo_bin("jot-cli").unwrap();
+use predicate::str::{contains, is_empty};
+use predicates::prelude::*;
 
-    let assert = cmd
-        .env("JOT_PROFILE", "bad_test.toml")
-        .args(&["--profile", "test_assets/profile/default.toml"])
-        .arg("config")
-        .assert();
+use crate::web_client::mock::MOCK_TOKEN;
 
-    assert
-        .success()
-        .stdout(
-            contains(r#""profile_path": "test_assets/profile/default.toml""#)
-                .and(contains(r#""server_url": "asset_toml_server_url""#)),
-        )
-        .stderr(is_empty());
-}
-
-#[test]
-fn test_profile_env() {
-    let mut cmd = Command::cargo_bin("jot-cli").unwrap();
-
-    let assert = cmd
-        .env("JOT_PROFILE", "test_assets/profile/default.toml")
-        .arg("config")
-        .assert();
-
-    assert
-        .success()
-        .stdout(
-            contains(r#""profile_path": "test_assets/profile/default.toml""#)
-                .and(contains(r#""server_url": "asset_toml_server_url""#)),
-        )
-        .stderr(is_empty());
-}
+use super::{asserts::contains_login_success_messages, test_context::TestContext};
 
 #[test]
 fn test_login() {
-    let mut cmd = Command::cargo_bin("jot-cli").unwrap();
-    let dir = TempDir::new().unwrap();
-    let dir_path = dir.path();
-    let file_path = dir_path.join(Path::new("local.toml"));
-    std::fs::copy("test_assets/profile/local.toml", &file_path).unwrap();
+    // Arrange
+    let ctx = TestContext::new("test_assets/profile/local.toml");
 
-    let assert = cmd
-        .env("JOT_PROFILE", file_path.to_str().unwrap())
-        .arg("-m")
-        // .args(&["--mock-param", "test_assets/profile/default.toml"])
-        .arg("login")
-        .assert();
+    // Act
+    let assert = ctx.command().arg("login").assert();
 
+    // Assert
     assert
         .success()
-        .stdout(
-            contains(r#"Mocking sending device code"#)
-                .and(contains(r#"Please visit this URL to login"#))
-                .and(contains(r#"Mocking polling for token with device code:"#).count(3)),
-        )
+        .stdout(contains_login_success_messages())
         .stderr(is_empty());
+
+    ctx.assert_key_file_contains(MOCK_TOKEN.as_bytes());
+}
+
+#[test]
+fn test_note_search_default() {
+    let ctx = TestContext::new("test_assets/profile/local.toml");
+
+    ctx.command()
+        .args(["note", "search", "--lines", "1"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("#1").and(contains("Short note")))
+        // By default should only show first line of multi-line notes
+        .stdout(predicate::str::contains("Multi-line note..."))
+        .stdout(predicate::str::contains("With several").not())
+        .stdout(predicate::str::contains("Note with special formatting:..."))
+        // Should include timestamps
+        .stdout(predicate::str::contains("2024-01-01"))
+        .stdout(predicate::str::contains("2024-01-02"));
+}
+
+#[test]
+fn test_note_search_preview_lines() {
+    let ctx = TestContext::new("test_assets/profile/local.toml");
+
+    ctx.command()
+        .args(["note", "search", "--lines", "2"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Multi-line note\nWith several"))
+        .stdout(predicate::str::contains("Distinct lines").not())
+        .stdout(predicate::str::contains(
+            "Note with special formatting:\n* bullet point",
+        ))
+        .stdout(predicate::str::contains("> quote").not());
+}
+
+#[test]
+fn test_note_search_json() {
+    let ctx = TestContext::new("test_assets/profile/local.toml");
+
+    let assert = ctx
+        .command()
+        .args(["note", "search", "--output", "json"])
+        .assert()
+        .success();
+
+    let output = assert.get_output();
+    let json_str = std::str::from_utf8(&output.stdout).unwrap();
+
+    let parsed: serde_json::Value = serde_json::from_str(json_str).unwrap();
+
+    let notes = parsed.as_array().unwrap();
+    assert_eq!(notes.len(), 3);
+
+    // Check only what we know exists in the output
+    let note = &notes[0];
+    assert!(note["content"].as_str().unwrap().contains("Short note"));
+    assert!(notes[1]["content"]
+        .as_str()
+        .unwrap()
+        .contains("Multi-line note"));
+    assert!(notes[2]["content"]
+        .as_str()
+        .unwrap()
+        .contains("Note with special formatting"));
+}
+
+#[test]
+fn test_note_search_plain() {
+    let ctx = TestContext::new("test_assets/profile/local.toml");
+
+    ctx.command()
+        .args(["note", "search", "--output", "plain"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Short note"))
+        .stdout(predicate::str::contains(
+            "Multi-line note\nWith several\nDistinct lines\nTo test preview",
+        ))
+        .stdout(predicate::str::contains(
+            "Note with special formatting:\n* bullet point\n> quote",
+        ));
+}
+
+#[test]
+fn test_note_preview_truncation() {
+    let ctx = TestContext::new("test_assets/profile/local.toml");
+
+    // Test with 1 preview line
+    ctx.command()
+        .args(["note", "search", "--output", "plain", "--lines", "1"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Short note"))
+        .stdout(predicate::str::contains("Multi-line note...")); // Documents the newline bug
+
+    // Test with 2 preview lines
+    ctx.command()
+        .args(["note", "search", "--output", "plain", "--lines", "2"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Multi-line note\nWith several...")); // Same bug with multiple lines
+}
+
+#[test]
+fn test_note_search_date() {
+    let ctx = TestContext::new("test_assets/profile/local.toml");
+
+    ctx.command()
+        .args(["note", "search", "--lines", "1", "--date", "2024-01-03"])
+        .assert()
+        .success()
+        .stdout(
+            predicate::str::contains("#1")
+                .not()
+                .and(contains("2024-01-01").not())
+                .and(contains("Short note").not()),
+        )
+        .stdout(
+            predicate::str::contains("#3")
+                .and(contains("2024-01-03"))
+                .and(contains("Note with special formatting:...")),
+        );
 }
