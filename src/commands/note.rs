@@ -2,7 +2,7 @@ use std::io::{self, Write};
 
 use crate::{
     app_config::AppConfig,
-    args::NoteCommand,
+    args::{NoteCommand, NoteSearchArgs},
     editor::{Editor, ParseTemplate},
     formatters::NoteSearchFormatter,
     web_client,
@@ -45,6 +45,23 @@ pub async fn note_cmd(config: &AppConfig, subcommand: NoteCommand) -> Result<(),
         }
         NoteCommand::Search(args) => {
             let notes = client.search(&args).await?;
+            let mut formatter = NoteSearchFormatter::new(args);
+
+            formatter
+                .print_notes(&notes.notes)
+                .map_err(|e| anyhow::anyhow!("Error while formatting notes: {}", e))?;
+        }
+        NoteCommand::Last(args) => {
+            let args = NoteSearchArgs {
+                term: args.term,
+                tag: args.tag,
+                date: None,
+                lines: None,
+                limit: Some(1),
+                output: args.output,
+            };
+            let notes = client.search(&args).await?;
+
             let mut formatter = NoteSearchFormatter::new(args);
 
             formatter

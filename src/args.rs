@@ -62,6 +62,8 @@ pub enum NoteCommand {
     Add(NoteAddArgs),
     /// Lists notes.
     Search(NoteSearchArgs),
+    /// Get latest note.
+    Last(NoteLatestArgs),
 }
 
 #[derive(Debug, Args, Serialize, PartialEq)]
@@ -109,6 +111,26 @@ pub struct NoteSearchArgs {
     #[arg(long, value_name = "N")]
     pub lines: Option<usize>,
 
+    /// Maximum number of results to return
+    #[arg(long, short = 'l')]
+    pub limit: Option<i64>,
+
+    /// Output format (pretty, plain, or json)
+    #[arg(long, value_enum, default_value_t = OutputFormat::Pretty)]
+    pub output: OutputFormat,
+}
+
+#[derive(Debug, clap::Args, PartialEq, Serialize, Deserialize)]
+#[command(about = "Retrieve the latest order")]
+pub struct NoteLatestArgs {
+    /// Search term to filter notes
+    #[arg(default_value = None)]
+    pub term: Option<String>,
+
+    /// Filter by tags (can be specified multiple times or comma-separated)
+    #[arg(long, value_name = "TAGS", value_delimiter = ',')]
+    pub tag: Vec<String>,
+
     /// Output format (pretty, plain, or json)
     #[arg(long, value_enum, default_value_t = OutputFormat::Pretty)]
     pub output: OutputFormat,
@@ -121,6 +143,7 @@ impl Default for NoteSearchArgs {
             tag: vec![],
             date: None,
             lines: None,
+            limit: None,
             output: OutputFormat::Pretty,
         }
     }

@@ -2,7 +2,6 @@ use std::{collections::HashSet, io::Read};
 
 use anyhow::Context;
 use chrono::NaiveDate;
-use config::File;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
