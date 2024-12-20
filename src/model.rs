@@ -26,7 +26,7 @@ pub struct GetNotesResponse {
 pub struct Note {
     pub id: Option<i64>,
     pub content: String,
-    pub tags: String,
+    pub tags: Vec<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }

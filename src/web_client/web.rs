@@ -67,6 +67,7 @@ impl Client for WebClient {
     async fn create_note(
         &mut self,
         content: String,
+        tags: Vec<String>,
         _today: bool,
     ) -> anyhow::Result<CreateNoteResponse> {
         let real_token = match self.token {
@@ -80,7 +81,8 @@ impl Client for WebClient {
             .header("Content-Type", "application/json")
             .header("Authorization", format!("Bearer {}", real_token))
             .json(&json!({
-                "content": content
+                "content": content,
+                "tags": tags,
             }))
             .send()
             .await?;
@@ -130,6 +132,9 @@ impl Client for WebClient {
             Some(ref token) => token,
             None => anyhow::bail!("No token available"),
         };
+
+        let json = serde_json::to_string(args)?;
+        println!("{}", json);
 
         let response = self
             .client

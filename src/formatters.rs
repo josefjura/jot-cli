@@ -66,24 +66,27 @@ impl NoteSearchFormatter {
     }
 
     fn pretty_print_metadata(&self, buffer: &mut termcolor::Buffer, note: &Note) -> io::Result<()> {
-        let mut metadata = Vec::new();
-
-        buffer.set_color(ColorSpec::new().set_fg(Some(Color::Red)).set_intense(true))?;
-
-        metadata.push(format!("#{}", note.id.unwrap_or(0)));
-
         buffer.set_color(
             ColorSpec::new()
                 .set_fg(Some(Color::Cyan))
                 .set_intense(false),
         )?;
 
-        metadata.push(format!("[{}]", note.created_at.format("%Y-%m-%d %H:%M")));
-        metadata.push(format!("[{}]", note.updated_at.format("%Y-%m-%d %H:%M")));
+        writeln!(buffer, "\u{1F4CB} #{}", note.id.unwrap_or(0))?;
+
+        write!(
+            buffer,
+            "\u{1F4C5} [{}]",
+            note.created_at.format("%Y-%m-%d %H:%M")
+        )?;
+        writeln!(buffer, "[{}]", note.updated_at.format("%Y-%m-%d %H:%M"))?;
+
+        if !note.tags.is_empty() {
+            write!(buffer, "\u{1F516}")?;
+            writeln!(buffer, " {}", note.tags.join(","))?;
+        }
 
         buffer.reset()?;
-
-        writeln!(buffer, "{}", metadata.join(" "))?;
 
         Ok(())
     }
@@ -95,6 +98,10 @@ impl NoteSearchFormatter {
 
         metadata.push(format!("[{}]", note.created_at.format("%Y-%m-%d %H:%M")));
         metadata.push(format!("[{}]", note.updated_at.format("%Y-%m-%d %H:%M")));
+
+        if !note.tags.is_empty() {
+            metadata.push(format!(" [{}]", note.tags.join(",")));
+        }
 
         write!(buffer, "{} ", metadata.join(" "))?;
 

@@ -34,12 +34,14 @@ impl Client for MockClient {
         &mut self,
         device_code: &str,
     ) -> anyhow::Result<crate::model::TokenPollResponse> {
+        self.response_counter = 0;
+
         println!(
             "Mocking polling for token with device code: {}",
             device_code
         );
 
-        if self.response_counter == 2 {
+        if self.response_counter == 1 {
             return Ok(crate::model::TokenPollResponse::Success(
                 MOCK_TOKEN.to_string(),
             ));
@@ -53,6 +55,7 @@ impl Client for MockClient {
     async fn create_note(
         &mut self,
         content: String,
+        _tags: Vec<String>,
         _today: bool,
     ) -> anyhow::Result<crate::model::CreateNoteResponse> {
         let note = crate::model::CreateNoteResponse { id: 1, content };
@@ -64,7 +67,7 @@ impl Client for MockClient {
         let notes = vec![
             Note {
                 id: Some(1),
-                tags: "tag1,tag3".to_string(),
+                tags: vec!["tag1".to_string(), "tag3".to_string()],
                 created_at: chrono::DateTime::parse_from_rfc3339("2024-01-01T10:00:00Z")
                     .unwrap()
                     .into(),
@@ -75,7 +78,7 @@ impl Client for MockClient {
             },
             Note {
                 id: Some(2),
-                tags: "tag2,tag3".to_string(),
+                tags: vec!["tag2".to_string(), "tag3".to_string()],
                 created_at: chrono::DateTime::parse_from_rfc3339("2024-01-02T10:00:00Z")
                     .unwrap()
                     .into(),
@@ -87,7 +90,7 @@ impl Client for MockClient {
             },
             Note {
                 id: Some(3),
-                tags: "tag3,tag4".to_string(),
+                tags: vec!["tag3".to_string(), "tag4".to_string()],
                 created_at: chrono::DateTime::parse_from_rfc3339("2024-01-03T10:00:00Z")
                     .unwrap()
                     .into(),
@@ -107,19 +110,7 @@ impl Client for MockClient {
         &mut self,
         _args: &NoteSearchArgs,
     ) -> anyhow::Result<crate::model::GetNotesResponse> {
-        let mut response = self.get_notes().await?;
-
-        // Filter by args.date
-        response.notes = response
-            .notes
-            .into_iter()
-            .filter(|note| {
-                note.created_at.naive_utc().date()
-                    == chrono::NaiveDate::from_ymd_opt(2024, 1, 3).unwrap()
-            })
-            .collect();
-
-        Ok(response)
+        Ok(self.get_notes().await?)
     }
 
     fn get_server_url(&self) -> String {

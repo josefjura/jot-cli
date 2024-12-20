@@ -1,6 +1,7 @@
+use std::collections::HashSet;
+
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use serde::{Deserialize, Serialize};
-use toml::value::Date;
 
 use crate::utils::date_target::DateTarget;
 
@@ -71,6 +72,9 @@ pub struct NoteAddArgs {
     /// Note content
     #[arg(trailing_var_arg = true)]
     pub content: Vec<String>,
+    /// Open in external editor
+    #[arg(long, short, default_value_t = false)]
+    pub edit: bool,
 }
 
 #[derive(Debug, Clone, ValueEnum, PartialEq, Serialize, Deserialize)]
@@ -95,7 +99,7 @@ pub struct NoteSearchArgs {
 
     /// Filter by tags (can be specified multiple times or comma-separated)
     #[arg(long, value_name = "TAGS", value_delimiter = ',')]
-    pub tag: Option<Vec<String>>,
+    pub tag: Vec<String>,
 
     /// Filter by date (e.g., "today", "last week", "2024-03-16")
     #[arg(long, value_name = "DATE", value_parser = parse_date_target)]
@@ -114,7 +118,7 @@ impl Default for NoteSearchArgs {
     fn default() -> Self {
         Self {
             term: None,
-            tag: None,
+            tag: vec![],
             date: None,
             lines: None,
             output: OutputFormat::Pretty,

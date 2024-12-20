@@ -41,6 +41,7 @@ pub trait Client {
     async fn create_note(
         &mut self,
         content: String,
+        tags: Vec<String>,
         today: bool,
     ) -> anyhow::Result<CreateNoteResponse>;
     async fn get_notes(&mut self) -> anyhow::Result<GetNotesResponse>;

@@ -11,6 +11,7 @@ mod app_config;
 mod args;
 mod auth;
 mod commands;
+mod editor;
 mod formatters;
 mod init;
 mod model;
