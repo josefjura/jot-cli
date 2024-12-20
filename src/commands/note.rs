@@ -37,7 +37,7 @@ pub async fn note_cmd(config: &AppConfig, subcommand: NoteCommand) -> Result<(),
                 result
             } else {
                 client
-                    .create_note(args.content.join(" "), vec![], args.today)
+                    .create_note(args.content.join(" "), args.tag, args.today)
                     .await?
             };
 

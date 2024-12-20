@@ -77,6 +77,9 @@ pub struct NoteAddArgs {
     /// Open in external editor
     #[arg(long, short, default_value_t = false)]
     pub edit: bool,
+    /// Filter by tags (can be specified multiple times or comma-separated)
+    #[arg(long, value_name = "TAGS", value_delimiter = ',')]
+    pub tag: Vec<String>,
 }
 
 #[derive(Debug, Clone, ValueEnum, PartialEq, Serialize, Deserialize)]
