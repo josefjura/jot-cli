@@ -1,16 +1,23 @@
-use crate::{app_config::AppConfig, auth::AuthFlow, web_client};
+use crate::{
+    app_config::AppConfig,
+    auth::AuthFlow,
+    web_client::{self, Client},
+};
 
-pub async fn login_cmd(config: AppConfig) -> Result<(), anyhow::Error> {
-    if config.profile_exists {
-        println!("Using profile: {:?}", config.profile_path);
+pub async fn login_cmd(
+    mut client: Box<dyn Client>,
+    profile_path: Option<&str>,
+    api_key_path: &str,
+) -> Result<(), anyhow::Error> {
+    if let Some(profile_path) = profile_path {
+        println!("Using profile: {:?}", profile_path);
     }
-    let mut client = web_client::get_client(&config);
     let token = AuthFlow::new().login(client.as_mut()).await;
 
     match token {
         Ok(token) => {
-            println!("Api Key Path: {}", config.api_key_path);
-            std::fs::write(config.api_key_path, token)?;
+            println!("Api Key Path: {}", api_key_path);
+            std::fs::write(api_key_path, token)?;
             println!("User successfully logged in.");
         }
         Err(e) => {

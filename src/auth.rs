@@ -90,6 +90,12 @@ impl AuthFlow {
         anyhow::bail!("Authentication timed out")
     }
 
+    async fn check_auth(&self, client: &mut dyn Client) -> anyhow::Result<()> {
+        client.ping().await?;
+
+        Ok(())
+    }
+
     #[expect(dead_code)]
     fn save_token(&self, token_path: &PathBuf, token: &str) -> anyhow::Result<()> {
         // Ensure the directory exists

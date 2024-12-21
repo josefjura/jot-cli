@@ -64,6 +64,10 @@ impl Client for MockClient {
         Ok(note)
     }
 
+    async fn ping(&self) -> anyhow::Result<()> {
+        Ok(())
+    }
+
     async fn get_notes(&mut self) -> anyhow::Result<GetNotesResponse> {
         let notes = vec![
             Note {

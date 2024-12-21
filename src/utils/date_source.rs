@@ -1,9 +1,9 @@
 use std::str::FromStr;
 
 use chrono::{Days, Local, NaiveDate};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 
-#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum DateSource {
     Today,
     Yesterday,
@@ -27,9 +27,39 @@ impl FromStr for DateSource {
     }
 }
 
+// Custom deserializer implementation
+impl<'de> Deserialize<'de> for DateSource {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        match s.to_lowercase().as_str() {
+            "today" => Ok(DateSource::Today),
+            "yesterday" => Ok(DateSource::Yesterday),
+            "tomorrow" => Ok(DateSource::Tomorrow),
+            date => Ok(DateSource::Specific(
+                NaiveDate::parse_from_str(date, "%Y-%m-%d").unwrap(),
+            )),
+        }
+    }
+}
+
 impl ToString for DateSource {
     fn to_string(&self) -> String {
         self.to_date().format("%Y-%m-%d").to_string()
+    }
+}
+
+impl Default for DateSource {
+    fn default() -> Self {
+        Self::Today
+    }
+}
+
+impl From<DateSource> for NaiveDate {
+    fn from(ds: DateSource) -> Self {
+        ds.to_date()
     }
 }
 

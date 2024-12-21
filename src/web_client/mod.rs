@@ -37,6 +37,7 @@ pub fn get_client(config: &AppConfig) -> Box<dyn Client> {
 
 #[async_trait]
 pub trait Client {
+    async fn ping(&self) -> anyhow::Result<()>;
     async fn send_device_code(&self, device_code: &str) -> anyhow::Result<()>;
     async fn poll_for_token(&mut self, device_code: &str) -> anyhow::Result<TokenPollResponse>;
     async fn create_note(

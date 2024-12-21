@@ -4,16 +4,16 @@ use std::{
 };
 
 use anyhow::Context;
-use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 
-use crate::args::NoteAddArgs;
+use crate::{args::NoteAddArgs, utils::date_source::DateSource};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct EditorTemplate {
     #[serde(default)]
     pub tags: HashSet<String>,
-    pub date: Option<NaiveDate>,
+    #[serde(default)]
+    pub date: DateSource,
     #[serde(default)]
     pub today: bool,
     #[serde(skip)]
@@ -24,7 +24,7 @@ impl EditorTemplate {
     pub fn new() -> Self {
         EditorTemplate {
             tags: HashSet::new(),
-            date: None,
+            date: DateSource::Today,
             today: false,
             content: String::new(),
         }
@@ -110,5 +110,73 @@ impl ParseTemplate for String {
         }
 
         Ok(parsed_toml)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_parse_template() {
+        let template = r#"tags = ["work", "important"]
+#tags = []
+date = "today"
+#date = "YYYY-MM-DD"
++++
+Some content"#
+            .to_string();
+
+        let parsed = template.parse_template().unwrap();
+
+        assert_eq!(parsed.tags.len(), 2);
+        assert_eq!(parsed.date, DateSource::Today);
+        assert_eq!(parsed.content, "Some content");
+    }
+
+    #[test]
+    fn test_parse_template_no_content() {
+        let template = r#"tags = ["work", "important"]
+#tags = []
+date = "today"
+#date = "YYYY-MM-DD"
++++"#
+            .to_string();
+
+        let parsed = template.parse_template().unwrap();
+
+        assert_eq!(parsed.tags.len(), 2);
+        assert_eq!(parsed.date, DateSource::Today);
+        assert_eq!(parsed.content, "");
+    }
+
+    #[test]
+    fn test_parse_template_no_tags() {
+        let template = r#"date = "today"
+#date = "YYYY-MM-DD"
++++
+Some content"#
+            .to_string();
+
+        let parsed = template.parse_template().unwrap();
+
+        assert_eq!(parsed.tags.len(), 0);
+        assert_eq!(parsed.date, DateSource::Today);
+        assert_eq!(parsed.content, "Some content");
+    }
+
+    #[test]
+    fn test_parse_template_no_date() {
+        let template = r#"tags = ["work", "important"]
+#tags = []
++++
+Some content"#
+            .to_string();
+
+        let parsed = template.parse_template().unwrap();
+
+        assert_eq!(parsed.tags.len(), 2);
+        assert_eq!(parsed.date, DateSource::Today);
+        assert_eq!(parsed.content, "Some content");
     }
 }

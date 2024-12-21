@@ -1,25 +1,22 @@
-use std::io::{self, Write};
-
-use chrono::{Local, NaiveDate};
+use chrono::Local;
 
 use crate::{
     app_config::AppConfig,
     args::{NoteCommand, NoteSearchArgs},
-    editor::{Editor, ParseTemplate},
+    editor::Editor,
     formatters::NoteSearchFormatter,
-    model::Note,
-    web_client,
+    web_client::{self, Client},
 };
 
-const TEMPLATE: &'static str = r#"#tags = ["work", "important"]
-#tags = []
-date = "today"
+const TEMPLATE: &'static str = r#"tags = ["work", "important"]
+#tags = [""]
 #date = "YYYY-MM-DD"
 +++"#;
 
-pub async fn note_cmd(config: &AppConfig, subcommand: NoteCommand) -> Result<(), anyhow::Error> {
-    let mut client = web_client::get_client(config);
-
+pub async fn note_cmd(
+    mut client: Box<dyn Client>,
+    subcommand: NoteCommand,
+) -> Result<(), anyhow::Error> {
     match subcommand {
         NoteCommand::Add(args) => {
             let note = if args.edit {
@@ -29,11 +26,7 @@ pub async fn note_cmd(config: &AppConfig, subcommand: NoteCommand) -> Result<(),
                 let tags = result.tags.iter().map(|t| t.to_string()).collect();
 
                 client
-                    .create_note(
-                        result.content,
-                        tags,
-                        result.date.unwrap_or(Local::now().date_naive()),
-                    )
+                    .create_note(result.content, tags, result.date.to_date())
                     .await?
             } else {
                 client

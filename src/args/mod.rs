@@ -54,6 +54,11 @@ pub enum Command {
     Down(NoteAddArgs),
 }
 
+pub enum CommandGroup {
+    WithClient(Command),
+    WithoutClient(Command),
+}
+
 #[derive(Debug, Subcommand, Serialize, PartialEq)]
 pub enum NoteCommand {
     /// Creates a new note.

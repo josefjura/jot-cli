@@ -65,6 +65,26 @@ impl Client for WebClient {
         }
     }
 
+    async fn ping(&self) -> anyhow::Result<()> {
+        let real_token = match self.token {
+            Some(ref token) => token,
+            None => anyhow::bail!("No token available"),
+        };
+
+        let response = self
+            .client
+            .get(format!("{}/health/auth", self.server_url))
+            .header("Authorization", format!("Bearer {}", real_token))
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            anyhow::bail!("Cannot verify login");
+        }
+
+        Ok(())
+    }
+
     async fn create_note(
         &mut self,
         content: String,
