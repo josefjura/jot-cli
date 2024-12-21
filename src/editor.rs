@@ -1,8 +1,13 @@
-use std::{collections::HashSet, io::Read};
+use std::{
+    collections::HashSet,
+    io::{self, Read, Write},
+};
 
 use anyhow::Context;
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
+
+use crate::args::NoteAddArgs;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct EditorTemplate {
@@ -26,11 +31,15 @@ impl EditorTemplate {
     }
 }
 
-pub struct Editor {}
+pub struct Editor {
+    template: String,
+}
 
 impl Editor {
-    pub fn new() -> Self {
-        Editor {}
+    pub fn new(template: &str) -> Self {
+        Editor {
+            template: template.to_string(),
+        }
     }
 
     fn read_from_file(&self, tempfile: tempfile::NamedTempFile) -> anyhow::Result<String> {
@@ -59,12 +68,26 @@ impl Editor {
         Ok(content)
     }
 
-    pub fn with_initial_content(&self, content: &str) -> anyhow::Result<String> {
+    pub fn open(&self, args: &NoteAddArgs) -> anyhow::Result<EditorTemplate> {
+        print!("\x1B[?1049h");
+        io::stdout().flush()?;
+        let content = self
+            .with_initial_content(&self.template, &args.content.join(" "))?
+            .parse_template()?;
+
+        // Restore state and ensure buffer is cleared properly
+        print!("\x1B[?1049l\x1B[H\x1B[2J");
+        io::stdout().flush()?; // Important to flush here too
+
+        Ok(content)
+    }
+
+    pub fn with_initial_content(&self, template: &str, content: &str) -> anyhow::Result<String> {
         let mut tempfile =
             tempfile::NamedTempFile::new().context("Failed to create temporary file")?;
 
         // Write initial content
-        std::io::Write::write_all(&mut tempfile, content.as_bytes())
+        std::io::Write::write_all(&mut tempfile, template.as_bytes())
             .context("Failed to write initial content")?;
 
         self.read_from_file(tempfile)

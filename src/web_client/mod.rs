@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use chrono::NaiveDate;
 
 use crate::{
     app_config::AppConfig,
@@ -42,7 +43,7 @@ pub trait Client {
         &mut self,
         content: String,
         tags: Vec<String>,
-        today: bool,
+        date: NaiveDate,
     ) -> anyhow::Result<CreateNoteResponse>;
     async fn get_notes(&mut self) -> anyhow::Result<GetNotesResponse>;
     async fn search(&mut self, args: &NoteSearchArgs) -> anyhow::Result<GetNotesResponse>;

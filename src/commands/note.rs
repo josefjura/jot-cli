@@ -1,17 +1,20 @@
 use std::io::{self, Write};
 
+use chrono::{Local, NaiveDate};
+
 use crate::{
     app_config::AppConfig,
     args::{NoteCommand, NoteSearchArgs},
     editor::{Editor, ParseTemplate},
     formatters::NoteSearchFormatter,
+    model::Note,
     web_client,
 };
 
-const template: &'static str = r#"#tags = ["work", "important"]
+const TEMPLATE: &'static str = r#"#tags = ["work", "important"]
 #tags = []
-#today = true
-date = "2024-01-01"
+date = "today"
+#date = "YYYY-MM-DD"
 +++"#;
 
 pub async fn note_cmd(config: &AppConfig, subcommand: NoteCommand) -> Result<(), anyhow::Error> {
@@ -19,25 +22,22 @@ pub async fn note_cmd(config: &AppConfig, subcommand: NoteCommand) -> Result<(),
 
     match subcommand {
         NoteCommand::Add(args) => {
-            let editor = Editor::new();
-
             let note = if args.edit {
-                print!("\x1B[?1049h");
-                io::stdout().flush()?;
-                let content = editor.with_initial_content(&template)?.parse_template()?;
-                let tags: Vec<String> = content.tags.into_iter().collect();
-                let result = client
-                    .create_note(content.content, tags, content.today)
-                    .await?;
+                let editor = Editor::new(&TEMPLATE);
+                let result = editor.open(&args)?;
 
-                // Restore state and ensure buffer is cleared properly
-                print!("\x1B[?1049l\x1B[H\x1B[2J");
-                io::stdout().flush()?; // Important to flush here too
+                let tags = result.tags.iter().map(|t| t.to_string()).collect();
 
-                result
+                client
+                    .create_note(
+                        result.content,
+                        tags,
+                        result.date.unwrap_or(Local::now().date_naive()),
+                    )
+                    .await?
             } else {
                 client
-                    .create_note(args.content.join(" "), args.tag, args.today)
+                    .create_note(args.content.join(" "), args.tag, args.date.to_date())
                     .await?
             };
 

@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use chrono::NaiveDate;
 use serde_json::json;
 
 use crate::{
@@ -68,7 +69,7 @@ impl Client for WebClient {
         &mut self,
         content: String,
         tags: Vec<String>,
-        _today: bool,
+        date: NaiveDate,
     ) -> anyhow::Result<CreateNoteResponse> {
         let real_token = match self.token {
             Some(ref token) => token,
@@ -83,6 +84,7 @@ impl Client for WebClient {
             .json(&json!({
                 "content": content,
                 "tags": tags,
+                "date": date
             }))
             .send()
             .await?;
@@ -132,9 +134,6 @@ impl Client for WebClient {
             Some(ref token) => token,
             None => anyhow::bail!("No token available"),
         };
-
-        let json = serde_json::to_string(args)?;
-        println!("{}", json);
 
         let response = self
             .client

@@ -1,9 +1,7 @@
-use std::collections::HashSet;
-
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use serde::{Deserialize, Serialize};
 
-use crate::utils::date_target::DateTarget;
+use crate::utils::{date_source::DateSource, date_target::DateTarget};
 
 #[derive(Parser, Debug)]
 #[command(
@@ -69,8 +67,8 @@ pub enum NoteCommand {
 #[derive(Debug, Args, Serialize, PartialEq)]
 pub struct NoteAddArgs {
     /// Assign to current day
-    #[arg(long, short, default_value_t = false)]
-    pub today: bool,
+    #[arg(long, short, value_parser = parse_date_source, default_value_t = DateSource::Today)]
+    pub date: DateSource,
     /// Note content
     #[arg(trailing_var_arg = true)]
     pub content: Vec<String>,
@@ -153,5 +151,9 @@ impl Default for NoteSearchArgs {
 }
 
 pub fn parse_date_target(s: &str) -> anyhow::Result<DateTarget> {
+    return s.parse();
+}
+
+pub fn parse_date_source(s: &str) -> anyhow::Result<DateSource> {
     return s.parse();
 }

@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use chrono::NaiveDate;
 
 use crate::{
     args::NoteSearchArgs,
@@ -56,7 +57,7 @@ impl Client for MockClient {
         &mut self,
         content: String,
         _tags: Vec<String>,
-        _today: bool,
+        date: NaiveDate,
     ) -> anyhow::Result<crate::model::CreateNoteResponse> {
         let note = crate::model::CreateNoteResponse { id: 1, content };
 
