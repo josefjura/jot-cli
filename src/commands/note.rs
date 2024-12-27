@@ -1,14 +1,11 @@
-use chrono::Local;
-
 use crate::{
-    app_config::AppConfig,
-    args::{NoteCommand, NoteSearchArgs},
+    args::{NoteCommand, NoteSearchArgs, OutputFormat},
     editor::Editor,
-    formatters::NoteSearchFormatter,
-    web_client::{self, Client},
+    formatters::NoteFormatter,
+    web_client::Client,
 };
 
-const TEMPLATE: &'static str = r#"tags = ["work", "important"]
+const TEMPLATE: &str = r#"tags = ["work", "important"]
 #tags = [""]
 #date = "YYYY-MM-DD"
 +++"#;
@@ -20,7 +17,7 @@ pub async fn note_cmd(
     match subcommand {
         NoteCommand::Add(args) => {
             let note = if args.edit {
-                let editor = Editor::new(&TEMPLATE);
+                let editor = Editor::new(TEMPLATE);
                 let result = editor.open(&args)?;
 
                 let tags = result.tags.iter().map(|t| t.to_string()).collect();
@@ -34,11 +31,11 @@ pub async fn note_cmd(
                     .await?
             };
 
-            println!("Note added successfully ({})", note.id);
+            NoteFormatter::new(OutputFormat::Pretty).print_notes(&[note])?;
         }
         NoteCommand::Search(args) => {
             let notes = client.search(&args).await?;
-            let mut formatter = NoteSearchFormatter::new(args);
+            let mut formatter = NoteFormatter::new(args.output);
 
             formatter
                 .print_notes(&notes.notes)
@@ -55,7 +52,7 @@ pub async fn note_cmd(
             };
             let notes = client.search(&args).await?;
 
-            let mut formatter = NoteSearchFormatter::new(args);
+            let mut formatter = NoteFormatter::new(args.output);
 
             formatter
                 .print_notes(&notes.notes)

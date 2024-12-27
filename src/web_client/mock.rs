@@ -58,8 +58,14 @@ impl Client for MockClient {
         content: String,
         _tags: Vec<String>,
         date: NaiveDate,
-    ) -> anyhow::Result<crate::model::CreateNoteResponse> {
-        let note = crate::model::CreateNoteResponse { id: 1, content };
+    ) -> anyhow::Result<crate::model::Note> {
+        let note = crate::model::Note {
+            id: Some(1),
+            content,
+            tags: vec![],
+            created_at: chrono::Utc::now(),
+            updated_at: chrono::Utc::now(),
+        };
 
         Ok(note)
     }
@@ -68,6 +74,7 @@ impl Client for MockClient {
         Ok(())
     }
 
+    #[allow(clippy::unwrap_used)]
     async fn get_notes(&mut self) -> anyhow::Result<GetNotesResponse> {
         let notes = vec![
             Note {

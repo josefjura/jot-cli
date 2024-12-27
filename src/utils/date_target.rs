@@ -1,6 +1,6 @@
-use std::str::FromStr;
+use std::{fmt::Display, str::FromStr};
 
-use chrono::{NaiveDate, NaiveDateTime};
+use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -39,9 +39,9 @@ impl FromStr for DateTarget {
     }
 }
 
-impl ToString for DateTarget {
-    fn to_string(&self) -> String {
-        match self {
+impl Display for DateTarget {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let str = match self {
             DateTarget::All => "all".to_string(),
             DateTarget::Past => "past".to_string(),
             DateTarget::Future => "future".to_string(),
@@ -52,9 +52,28 @@ impl ToString for DateTarget {
             DateTarget::NextWeek => "next week".to_string(),
             DateTarget::NextMonth => "next month".to_string(),
             DateTarget::Specific(dt) => dt.to_string(),
-        }
+        };
+
+        write!(f, "{}", str)
     }
 }
+
+// impl ToString for DateTarget {
+//     fn to_string(&self) -> String {
+//         match self {
+//             DateTarget::All => "all".to_string(),
+//             DateTarget::Past => "past".to_string(),
+//             DateTarget::Future => "future".to_string(),
+//             DateTarget::Today => "today".to_string(),
+//             DateTarget::Yesterday => "yesterday".to_string(),
+//             DateTarget::LastWeek => "last week".to_string(),
+//             DateTarget::LastMonth => "last month".to_string(),
+//             DateTarget::NextWeek => "next week".to_string(),
+//             DateTarget::NextMonth => "next month".to_string(),
+//             DateTarget::Specific(dt) => dt.to_string(),
+//         }
+//     }
+// }
 
 impl Serialize for DateTarget {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -68,6 +87,7 @@ impl Serialize for DateTarget {
 
 #[cfg(test)]
 mod tests {
+    use anyhow::bail;
     use chrono::Datelike;
 
     use super::*;

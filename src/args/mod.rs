@@ -54,11 +54,6 @@ pub enum Command {
     Down(NoteAddArgs),
 }
 
-pub enum CommandGroup {
-    WithClient(Command),
-    WithoutClient(Command),
-}
-
 #[derive(Debug, Subcommand, Serialize, PartialEq)]
 pub enum NoteCommand {
     /// Creates a new note.
@@ -156,9 +151,9 @@ impl Default for NoteSearchArgs {
 }
 
 pub fn parse_date_target(s: &str) -> anyhow::Result<DateTarget> {
-    return s.parse();
+    s.parse()
 }
 
 pub fn parse_date_source(s: &str) -> anyhow::Result<DateSource> {
-    return s.parse();
+    s.parse()
 }

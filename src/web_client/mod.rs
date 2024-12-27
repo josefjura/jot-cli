@@ -4,7 +4,7 @@ use chrono::NaiveDate;
 use crate::{
     app_config::AppConfig,
     args::NoteSearchArgs,
-    model::{CreateNoteResponse, GetNotesResponse, TokenPollResponse},
+    model::{CreateNoteResponse, GetNotesResponse, Note, TokenPollResponse},
 };
 
 #[cfg(debug_assertions)]
@@ -45,7 +45,7 @@ pub trait Client {
         content: String,
         tags: Vec<String>,
         date: NaiveDate,
-    ) -> anyhow::Result<CreateNoteResponse>;
+    ) -> anyhow::Result<Note>;
     async fn get_notes(&mut self) -> anyhow::Result<GetNotesResponse>;
     async fn search(&mut self, args: &NoteSearchArgs) -> anyhow::Result<GetNotesResponse>;
     fn get_server_url(&self) -> String;

@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{fmt::Display, str::FromStr};
 
 use chrono::{Days, Local, NaiveDate};
 use serde::{Deserialize, Deserializer, Serialize};
@@ -39,15 +39,16 @@ impl<'de> Deserialize<'de> for DateSource {
             "yesterday" => Ok(DateSource::Yesterday),
             "tomorrow" => Ok(DateSource::Tomorrow),
             date => Ok(DateSource::Specific(
-                NaiveDate::parse_from_str(date, "%Y-%m-%d").unwrap(),
+                NaiveDate::parse_from_str(date, "%Y-%m-%d").map_err(serde::de::Error::custom)?,
             )),
         }
     }
 }
 
-impl ToString for DateSource {
-    fn to_string(&self) -> String {
-        self.to_date().format("%Y-%m-%d").to_string()
+impl Display for DateSource {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let str = self.to_date().format("%Y-%m-%d").to_string();
+        write!(f, "{}", str)
     }
 }
 

@@ -1,8 +1,4 @@
-use crate::{
-    app_config::AppConfig,
-    auth::AuthFlow,
-    web_client::{self, Client},
-};
+use crate::{auth::AuthFlow, web_client::Client};
 
 pub async fn login_cmd(
     mut client: Box<dyn Client>,

@@ -20,13 +20,13 @@ pub struct EditorTemplate {
     pub content: String,
 }
 
-impl EditorTemplate {
-    pub fn new() -> Self {
-        EditorTemplate {
+impl Default for EditorTemplate {
+    fn default() -> Self {
+        Self {
             tags: HashSet::new(),
             date: DateSource::Today,
-            today: false,
-            content: String::new(),
+            today: true,
+            content: "".to_string(),
         }
     }
 }
@@ -82,7 +82,7 @@ impl Editor {
         Ok(content)
     }
 
-    pub fn with_initial_content(&self, template: &str, content: &str) -> anyhow::Result<String> {
+    pub fn with_initial_content(&self, template: &str, _content: &str) -> anyhow::Result<String> {
         let mut tempfile =
             tempfile::NamedTempFile::new().context("Failed to create temporary file")?;
 

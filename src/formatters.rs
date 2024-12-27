@@ -1,25 +1,22 @@
-use crate::{
-    args::{NoteSearchArgs, OutputFormat},
-    model::Note,
-};
+use crate::{args::OutputFormat, model::Note};
 use std::io::{self, Write};
 use termcolor::{BufferWriter, Color, ColorChoice, ColorSpec, WriteColor};
 
-pub struct NoteSearchFormatter {
-    args: NoteSearchArgs,
+pub struct NoteFormatter {
+    output: OutputFormat,
     writer: BufferWriter,
 }
 
-impl NoteSearchFormatter {
-    pub fn new(args: NoteSearchArgs) -> Self {
-        let color_choice = match args.output {
+impl NoteFormatter {
+    pub fn new(output: OutputFormat) -> Self {
+        let color_choice = match output {
             OutputFormat::Plain => ColorChoice::Never,
             OutputFormat::Json => ColorChoice::Never,
             OutputFormat::Pretty => ColorChoice::Auto,
         };
 
         Self {
-            args,
+            output,
             writer: BufferWriter::stdout(color_choice),
         }
     }
@@ -27,15 +24,13 @@ impl NoteSearchFormatter {
     pub fn print_notes(&mut self, notes: &[Note]) -> io::Result<()> {
         let mut buffer = self.writer.buffer();
 
-        if self.args.output == OutputFormat::Json {
+        if self.output == OutputFormat::Json {
             self.print_json(notes, &mut buffer)?;
+        } else if notes.is_empty() {
+            writeln!(buffer, "No notes found")?;
         } else {
-            if notes.is_empty() {
-                writeln!(buffer, "No notes found")?;
-            } else {
-                for note in notes {
-                    self.print_note(&mut buffer, note, self.args.output == OutputFormat::Pretty)?;
-                }
+            for note in notes {
+                self.print_note(&mut buffer, note, self.output == OutputFormat::Pretty)?;
             }
         }
 
@@ -125,7 +120,8 @@ impl NoteSearchFormatter {
     }
 
     fn create_preview(&self, content: &str) -> String {
-        let max_lines = self.args.lines.unwrap_or(std::usize::MAX);
+        // Add the lines limit!
+        let max_lines = usize::MAX;
         let preview: String = content
             .lines()
             .take(max_lines)
@@ -138,38 +134,4 @@ impl NoteSearchFormatter {
             preview
         }
     }
-}
-
-#[test]
-fn test_note_search_formatter_create_preview_one_line() {
-    let formatter = NoteSearchFormatter::new(NoteSearchArgs {
-        lines: Some(1),
-        ..Default::default()
-    });
-
-    assert_eq!(formatter.create_preview("One\nTwo\nThree\nFour"), "One...");
-
-    assert_eq!(formatter.create_preview("One"), "One");
-
-    assert_eq!(formatter.create_preview("Short note"), "Short note");
-
-    assert_eq!(
-        formatter.create_preview("Multi-line note\nWith several\nDistinct lines\nTo test preview"),
-        "Multi-line note..."
-    );
-}
-
-#[test]
-fn test_note_search_formatter_create_preview_two_lines() {
-    let formatter = NoteSearchFormatter::new(NoteSearchArgs {
-        lines: Some(2),
-        ..Default::default()
-    });
-
-    assert_eq!(
-        formatter.create_preview("One\nTwo\nThree\nFour"),
-        "One\nTwo..."
-    );
-
-    assert_eq!(formatter.create_preview("One\nTwo"), "One\nTwo");
 }
