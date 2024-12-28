@@ -14,8 +14,6 @@ pub struct EditorTemplate {
     pub tags: HashSet<String>,
     #[serde(default)]
     pub date: DateSource,
-    #[serde(default)]
-    pub today: bool,
     #[serde(skip)]
     pub content: String,
 }
@@ -25,7 +23,6 @@ impl Default for EditorTemplate {
         Self {
             tags: HashSet::new(),
             date: DateSource::Today,
-            today: true,
             content: "".to_string(),
         }
     }

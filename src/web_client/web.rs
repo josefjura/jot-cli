@@ -4,9 +4,7 @@ use serde_json::json;
 
 use crate::{
     args::NoteSearchArgs,
-    model::{
-        CreateNoteResponse, DeviceCodeRequest, GetNotesResponse, Note, Token, TokenPollResponse,
-    },
+    model::{DeviceCodeRequest, GetNotesResponse, Note, Token, TokenPollResponse},
 };
 
 use super::Client;
@@ -104,7 +102,7 @@ impl Client for WebClient {
             .json(&json!({
                 "content": content,
                 "tags": tags,
-                "date": date
+                "target_date": date
             }))
             .send()
             .await?;
@@ -122,6 +120,7 @@ impl Client for WebClient {
             tags: json.tags,
             created_at: json.created_at,
             updated_at: json.updated_at,
+            target_date: json.target_date,
         })
     }
 

@@ -29,6 +29,7 @@ pub struct Note {
     pub tags: Vec<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub target_date: chrono::NaiveDate,
 }
 
 #[derive(Serialize)]

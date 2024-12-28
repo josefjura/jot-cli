@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use chrono::NaiveDate;
+use chrono::{NaiveDate, Utc};
 
 use crate::{
     args::NoteSearchArgs,
@@ -65,6 +65,7 @@ impl Client for MockClient {
             tags: vec![],
             created_at: chrono::Utc::now(),
             updated_at: chrono::Utc::now(),
+            target_date: date,
         };
 
         Ok(note)
@@ -87,6 +88,7 @@ impl Client for MockClient {
                     .unwrap()
                     .into(),
                 content: "Short note".to_string(),
+                target_date: Utc::now().naive_utc().date(),
             },
             Note {
                 id: Some(2),
@@ -99,6 +101,7 @@ impl Client for MockClient {
                     .into(),
                 content: "Multi-line note\nWith several\nDistinct lines\nTo test preview"
                     .to_string(),
+                target_date: Utc::now().naive_utc().date(),
             },
             Note {
                 id: Some(3),
@@ -112,6 +115,7 @@ impl Client for MockClient {
                 content:
                     "Note with special formatting:\n* bullet point\n> quote\n```\ncode block\n```"
                         .to_string(),
+                target_date: Utc::now().naive_utc().date(),
             },
         ];
 
