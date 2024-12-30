@@ -55,6 +55,8 @@ impl NoteFormatter {
         // Line break if pretty print
         if do_pretty_print {
             writeln!(buffer)?;
+        } else {
+            write!(buffer, "\0")?;
         }
 
         Ok(())
@@ -68,13 +70,9 @@ impl NoteFormatter {
         )?;
 
         writeln!(buffer, "\u{1F4CB} #{}", note.id.unwrap_or(0))?;
-
-        write!(
-            buffer,
-            "\u{1F4C5} [{}]",
-            note.created_at.format("%Y-%m-%d %H:%M")
-        )?;
-        writeln!(buffer, "[{}]", note.updated_at.format("%Y-%m-%d %H:%M"))?;
+        if let Some(target_date) = note.target_date {
+            writeln!(buffer, "\u{1F4C5} [{}]", target_date.format("%Y-%m-%d"))?;
+        }
 
         if !note.tags.is_empty() {
             write!(buffer, "\u{1F516}")?;
@@ -91,6 +89,12 @@ impl NoteFormatter {
 
         metadata.push(format!("{}", note.id.unwrap_or(0)));
 
+        if let Some(target_date) = note.target_date {
+            metadata.push(format!("{}", target_date.format("%Y-%m-%d")));
+        } else {
+            metadata.push("".to_string());
+        }
+
         metadata.push(format!("{}", note.created_at.format("%Y-%m-%d %H:%M")));
         metadata.push(format!("{}", note.updated_at.format("%Y-%m-%d %H:%M")));
 
@@ -98,7 +102,7 @@ impl NoteFormatter {
             metadata.push(note.tags.join(","));
         }
 
-        write!(buffer, "{}", metadata.join("##"))?;
+        write!(buffer, "{};", metadata.join(";"))?;
 
         Ok(())
     }

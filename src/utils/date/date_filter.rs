@@ -1,10 +1,10 @@
 use std::str::FromStr;
 
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Serialize};
 
 use super::date_value::DateValue;
 
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum DateFilter {
     SpecificDate(DateValue),
     Range(DateValue, DateValue),
@@ -23,23 +23,13 @@ impl FromStr for DateFilter {
     }
 }
 
-impl<'de> Deserialize<'de> for DateFilter {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        DateFilter::from_str(&s).map_err(serde::de::Error::custom)
-    }
-}
-
 #[cfg(test)]
 mod date_value_test {
     use chrono::NaiveDate;
 
-    use crate::utils::date_value::DateFilter;
+    use crate::utils::date::date_filter::DateFilter;
 
-    use crate::utils::date_value::DateValue;
+    use crate::utils::date::date_value::DateValue;
 
     #[test]
     fn test_specific_ever() {

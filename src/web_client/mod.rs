@@ -4,7 +4,7 @@ use chrono::NaiveDate;
 use crate::{
     app_config::AppConfig,
     args::NoteSearchArgs,
-    model::{CreateNoteResponse, GetNotesResponse, Note, TokenPollResponse},
+    model::{GetNotesResponse, Note, TokenPollResponse},
 };
 
 #[cfg(debug_assertions)]

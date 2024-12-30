@@ -6,17 +6,14 @@ use std::{
 use anyhow::Context;
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    args::NoteAddArgs,
-    utils::date_value::{DateFilter, DateValue},
-};
+use crate::{args::NoteAddArgs, utils::date::date_value::DateValue};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct EditorTemplate {
     #[serde(default)]
     pub tags: HashSet<String>,
     #[serde(default)]
-    pub date: Option<DateFilter>,
+    pub date: Option<DateValue>,
     #[serde(skip)]
     pub content: String,
 }
@@ -25,7 +22,7 @@ impl Default for EditorTemplate {
     fn default() -> Self {
         Self {
             tags: HashSet::new(),
-            date: Some(DateFilter::SpecificDate(DateValue::Today)),
+            date: Some(DateValue::Today),
             content: "".to_string(),
         }
     }

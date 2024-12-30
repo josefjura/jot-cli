@@ -1,3 +1,4 @@
+use anyhow::Context;
 use chrono::Utc;
 
 use crate::{
@@ -19,7 +20,6 @@ pub async fn note_cmd(
     match subcommand {
         NoteCommand::Add(args) => {
             let target_date = args.date.to_date(Utc::now().date_naive());
-
             if let Some(target_date) = target_date {
                 let note = if args.edit {
                     let editor = Editor::new(TEMPLATE);
@@ -27,8 +27,14 @@ pub async fn note_cmd(
 
                     let tags = result.tags.iter().map(|t| t.to_string()).collect();
 
+                    let changed_date = result
+                        .date
+                        .unwrap_or(args.date.clone())
+                        .to_date(Utc::now().date_naive())
+                        .context("Default is empty")?;
+
                     client
-                        .create_note(result.content, tags, target_date)
+                        .create_note(result.content, tags, changed_date)
                         .await?
                 } else {
                     client
@@ -40,6 +46,7 @@ pub async fn note_cmd(
             } else {
                 println!("Invalid date");
             }
+            println!("Note added, {:?} -> {:?}", args.date, target_date);
         }
         NoteCommand::Search(args) => {
             let notes = client.search(&args).await?;
@@ -68,11 +75,9 @@ pub async fn note_cmd(
             let args = NoteSearchArgs {
                 term: args.term,
                 tag: args.tag,
-                date: None,
-                lines: None,
                 limit: Some(1),
                 output: args.output,
-                delete: false,
+                ..Default::default()
             };
             let notes = client.search(&args).await?;
 

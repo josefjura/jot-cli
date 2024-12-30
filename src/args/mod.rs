@@ -1,7 +1,7 @@
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use serde::{Deserialize, Serialize};
 
-use crate::utils::date_value::{DateFilter, DateValue};
+use crate::utils::date::{date_filter::DateFilter, date_value::DateValue};
 
 #[derive(Parser, Debug)]
 #[command(
@@ -93,7 +93,7 @@ impl Default for OutputFormat {
     }
 }
 
-#[derive(Debug, clap::Args, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, clap::Args, PartialEq, Serialize, Deserialize)]
 #[command(about = "Search and list notes")]
 pub struct NoteSearchArgs {
     /// Search term to filter notes
@@ -104,9 +104,17 @@ pub struct NoteSearchArgs {
     #[arg(long, value_name = "TAGS", value_delimiter = ',')]
     pub tag: Vec<String>,
 
-    /// Filter by date (e.g., "today", "last week", "2024-03-16")
+    /// Filter by assigned date (e.g., "today", "last week", "2024-03-16")
     #[arg(long, value_name = "DATE")]
     pub date: Option<DateFilter>,
+
+    /// Filter by date the note was created
+    #[arg(long)]
+    pub created: Option<DateFilter>,
+
+    /// Filter by date the note was last updated
+    #[arg(long)]
+    pub updated: Option<DateFilter>,
 
     /// Number of lines to display for each note (default: full content)
     #[arg(long, value_name = "N")]
@@ -148,6 +156,8 @@ impl Default for NoteSearchArgs {
             tag: vec![],
             date: None,
             lines: None,
+            created: None,
+            updated: None,
             limit: None,
             output: OutputFormat::Pretty,
             delete: false,

@@ -1,10 +1,12 @@
 use async_trait::async_trait;
-use chrono::NaiveDate;
+use chrono::{NaiveDate, Utc};
+use serde::Serialize;
 use serde_json::json;
 
 use crate::{
     args::NoteSearchArgs,
     model::{DeviceCodeRequest, GetNotesResponse, Note, Token, TokenPollResponse},
+    utils::date::date_filter::DateFilter,
 };
 
 use super::Client;
@@ -157,17 +159,41 @@ impl Client for WebClient {
             None => anyhow::bail!("No token available"),
         };
 
+        let target_date = args
+            .date
+            .clone()
+            .and_then(|d| d.search_for_day(Utc::now().date_naive()));
+
+        let created_at = args
+            .created
+            .clone()
+            .and_then(|d| d.search_for_day(Utc::now().date_naive()));
+
+        let updated_at = args
+            .updated
+            .clone()
+            .and_then(|d| d.search_for_day(Utc::now().date_naive()));
+
+        let body = SearchRequest {
+            tag: args.tag.clone(),
+            term: args.term.clone(),
+            limit: args.limit,
+            target_date,
+            created_at,
+            updated_at,
+        };
+
         let response = self
             .client
             .post(format!("{}/note/search", self.server_url))
-            .json(&args)
+            .json(&body)
             .bearer_auth(real_token)
             .header("Content-Type", "application/json")
             .send()
             .await?;
 
         if !response.status().is_success() {
-            anyhow::bail!("Failed to seaarch for notes");
+            anyhow::bail!("Failed to seaarch for notes, {}", response.text().await?);
         }
 
         let notes = response.json::<Vec<Note>>().await?;
@@ -195,5 +221,41 @@ impl Client for WebClient {
             .await?;
 
         Ok(())
+    }
+}
+
+#[derive(Debug, Serialize)]
+pub struct SearchRequest {
+    pub term: Option<String>,
+    pub limit: Option<i64>,
+    pub tag: Vec<String>,
+    pub target_date: Option<SearchRequestDate>,
+    pub created_at: Option<SearchRequestDate>,
+    pub updated_at: Option<SearchRequestDate>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(untagged)]
+pub enum SearchRequestDate {
+    Single(NaiveDate),
+    Range {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        from: Option<NaiveDate>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        until: Option<NaiveDate>,
+    },
+}
+
+impl DateFilter {
+    pub fn search_for_day(&self, today: NaiveDate) -> Option<SearchRequestDate> {
+        match self {
+            DateFilter::SpecificDate(date) => date.to_date(today).map(SearchRequestDate::Single),
+            DateFilter::Range(from, until) => {
+                let from = from.to_date(today);
+                let until = until.to_date(today);
+
+                Some(SearchRequestDate::Range { from, until })
+            }
+        }
     }
 }

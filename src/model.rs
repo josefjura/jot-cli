@@ -29,7 +29,7 @@ pub struct Note {
     pub tags: Vec<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
-    pub target_date: chrono::NaiveDate,
+    pub target_date: Option<chrono::NaiveDate>,
 }
 
 #[derive(Serialize)]
@@ -41,6 +41,8 @@ pub struct PreviewNote {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub updated_at: Option<chrono::DateTime<chrono::Utc>>,
     pub content: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub target_date: Option<chrono::NaiveDate>,
 }
 
 #[derive(Serialize)]
