@@ -1,7 +1,7 @@
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use serde::{Deserialize, Serialize};
 
-use crate::utils::{date_source::DateSource, date_target::DateTarget};
+use crate::utils::date_value::{DateFilter, DateValue};
 
 #[derive(Parser, Debug)]
 #[command(
@@ -67,8 +67,8 @@ pub enum NoteCommand {
 #[derive(Debug, Args, Serialize, PartialEq)]
 pub struct NoteAddArgs {
     /// Assign to current day
-    #[arg(long, short, value_parser = parse_date_source, default_value_t = DateSource::Today)]
-    pub date: DateSource,
+    #[arg(long, short, default_value_t = DateValue::Today)]
+    pub date: DateValue,
     /// Note content
     #[arg(trailing_var_arg = true)]
     pub content: Vec<String>,
@@ -105,8 +105,8 @@ pub struct NoteSearchArgs {
     pub tag: Vec<String>,
 
     /// Filter by date (e.g., "today", "last week", "2024-03-16")
-    #[arg(long, value_name = "DATE", value_parser = parse_date_target)]
-    pub date: Option<DateTarget>,
+    #[arg(long, value_name = "DATE")]
+    pub date: Option<DateFilter>,
 
     /// Number of lines to display for each note (default: full content)
     #[arg(long, value_name = "N")]
@@ -119,6 +119,10 @@ pub struct NoteSearchArgs {
     /// Output format (pretty, plain, or json)
     #[arg(long, value_enum, default_value_t = OutputFormat::Pretty)]
     pub output: OutputFormat,
+
+    // Ask for found notes to be deleted after displaying
+    #[arg(long, default_value_t = false)]
+    pub delete: bool,
 }
 
 #[derive(Debug, clap::Args, PartialEq, Serialize, Deserialize)]
@@ -146,14 +150,7 @@ impl Default for NoteSearchArgs {
             lines: None,
             limit: None,
             output: OutputFormat::Pretty,
+            delete: false,
         }
     }
-}
-
-pub fn parse_date_target(s: &str) -> anyhow::Result<DateTarget> {
-    s.parse()
-}
-
-pub fn parse_date_source(s: &str) -> anyhow::Result<DateSource> {
-    s.parse()
 }

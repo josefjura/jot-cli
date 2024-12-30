@@ -132,4 +132,8 @@ impl Client for MockClient {
     fn get_server_url(&self) -> String {
         MOCK_URL.to_string()
     }
+
+    async fn delete(&self, _ids: &[i64]) -> anyhow::Result<()> {
+        Ok(())
+    }
 }

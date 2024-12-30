@@ -178,4 +178,22 @@ impl Client for WebClient {
     fn get_server_url(&self) -> String {
         self.server_url.clone()
     }
+
+    async fn delete(&self, ids: &[i64]) -> anyhow::Result<()> {
+        let real_token = match self.token {
+            Some(ref token) => token,
+            None => anyhow::bail!("No token available"),
+        };
+
+        let _response = self
+            .client
+            .post(format!("{}/note/delete", self.server_url))
+            .json(ids)
+            .bearer_auth(real_token)
+            .header("Content-Type", "application/json")
+            .send()
+            .await?;
+
+        Ok(())
+    }
 }

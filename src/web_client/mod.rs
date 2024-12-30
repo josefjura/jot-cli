@@ -48,5 +48,6 @@ pub trait Client {
     ) -> anyhow::Result<Note>;
     async fn get_notes(&mut self) -> anyhow::Result<GetNotesResponse>;
     async fn search(&mut self, args: &NoteSearchArgs) -> anyhow::Result<GetNotesResponse>;
+    async fn delete(&self, ids: &[i64]) -> anyhow::Result<()>;
     fn get_server_url(&self) -> String;
 }

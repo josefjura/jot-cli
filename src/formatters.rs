@@ -89,16 +89,16 @@ impl NoteFormatter {
     fn print_metadata(&self, buffer: &mut termcolor::Buffer, note: &Note) -> io::Result<()> {
         let mut metadata = Vec::new();
 
-        metadata.push(format!("#{}", note.id.unwrap_or(0)));
+        metadata.push(format!("{}", note.id.unwrap_or(0)));
 
-        metadata.push(format!("[{}]", note.created_at.format("%Y-%m-%d %H:%M")));
-        metadata.push(format!("[{}]", note.updated_at.format("%Y-%m-%d %H:%M")));
+        metadata.push(format!("{}", note.created_at.format("%Y-%m-%d %H:%M")));
+        metadata.push(format!("{}", note.updated_at.format("%Y-%m-%d %H:%M")));
 
         if !note.tags.is_empty() {
-            metadata.push(format!(" [{}]", note.tags.join(",")));
+            metadata.push(note.tags.join(","));
         }
 
-        write!(buffer, "{} ", metadata.join(" "))?;
+        write!(buffer, "{}", metadata.join("##"))?;
 
         Ok(())
     }

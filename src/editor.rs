@@ -6,14 +6,17 @@ use std::{
 use anyhow::Context;
 use serde::{Deserialize, Serialize};
 
-use crate::{args::NoteAddArgs, utils::date_source::DateSource};
+use crate::{
+    args::NoteAddArgs,
+    utils::date_value::{DateFilter, DateValue},
+};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct EditorTemplate {
     #[serde(default)]
     pub tags: HashSet<String>,
     #[serde(default)]
-    pub date: DateSource,
+    pub date: Option<DateFilter>,
     #[serde(skip)]
     pub content: String,
 }
@@ -22,7 +25,7 @@ impl Default for EditorTemplate {
     fn default() -> Self {
         Self {
             tags: HashSet::new(),
-            date: DateSource::Today,
+            date: Some(DateFilter::SpecificDate(DateValue::Today)),
             content: "".to_string(),
         }
     }
@@ -127,7 +130,6 @@ Some content"#
         let parsed = template.parse_template().unwrap();
 
         assert_eq!(parsed.tags.len(), 2);
-        assert_eq!(parsed.date, DateSource::Today);
         assert_eq!(parsed.content, "Some content");
     }
 
@@ -143,7 +145,6 @@ date = "today"
         let parsed = template.parse_template().unwrap();
 
         assert_eq!(parsed.tags.len(), 2);
-        assert_eq!(parsed.date, DateSource::Today);
         assert_eq!(parsed.content, "");
     }
 
@@ -158,7 +159,6 @@ Some content"#
         let parsed = template.parse_template().unwrap();
 
         assert_eq!(parsed.tags.len(), 0);
-        assert_eq!(parsed.date, DateSource::Today);
         assert_eq!(parsed.content, "Some content");
     }
 
@@ -173,7 +173,6 @@ Some content"#
         let parsed = template.parse_template().unwrap();
 
         assert_eq!(parsed.tags.len(), 2);
-        assert_eq!(parsed.date, DateSource::Today);
         assert_eq!(parsed.content, "Some content");
     }
 }
