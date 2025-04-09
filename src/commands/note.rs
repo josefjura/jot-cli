@@ -3,7 +3,7 @@ use chrono::Utc;
 
 use crate::{
     args::{NoteCommand, NoteSearchArgs, OutputFormat},
-    editor::Editor,
+    editor::{Editor, ParseTemplate},
     formatters::NoteFormatter,
     web_client::Client,
 };
@@ -23,18 +23,30 @@ pub async fn note_cmd(
             if let Some(target_date) = target_date {
                 let note = if args.edit {
                     let editor = Editor::new(TEMPLATE);
-                    let result = editor.open(&args)?;
+                    let mut result = editor.open(&args)?;
 
-                    let tags = result.tags.iter().map(|t| t.to_string()).collect();
+                    while let Err(e) = result.parse_template() {
+                        // Add erorr as a comment to the template
+                        let error = format!("# Error: {}", e);
+                        let mut error_comment = "".to_string();
+                        error
+                            .lines()
+                            .for_each(|l| error_comment.push_str(&format!("# {}\n", l)));
+                        result = editor.open_str(&format!("{}\n{}", error_comment, result))?;
+                    }
 
-                    let changed_date = result
+                    let template = result.parse_template().context("Error parsing template")?;
+
+                    let tags = template.tags.iter().map(|t| t.to_string()).collect();
+
+                    let changed_date = template
                         .date
                         .unwrap_or(args.date.clone())
                         .to_date(Utc::now().date_naive())
                         .context("Default is empty")?;
 
                     client
-                        .create_note(result.content, tags, changed_date)
+                        .create_note(template.content, tags, changed_date)
                         .await?
                 } else {
                     client

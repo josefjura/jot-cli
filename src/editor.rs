@@ -65,12 +65,22 @@ impl Editor {
         Ok(content)
     }
 
-    pub fn open(&self, args: &NoteAddArgs) -> anyhow::Result<EditorTemplate> {
+    pub fn open(&self, args: &NoteAddArgs) -> anyhow::Result<String> {
         print!("\x1B[?1049h");
         io::stdout().flush()?;
-        let content = self
-            .with_initial_content(&self.template, &args.content.join(" "))?
-            .parse_template()?;
+        let content = self.with_initial_content(&self.template, &args.content.join(" "))?;
+
+        // Restore state and ensure buffer is cleared properly
+        print!("\x1B[?1049l\x1B[H\x1B[2J");
+        io::stdout().flush()?; // Important to flush here too
+
+        Ok(content)
+    }
+
+    pub fn open_str(&self, str: &str) -> anyhow::Result<String> {
+        print!("\x1B[?1049h");
+        io::stdout().flush()?;
+        let content = self.with_initial_content(str, str)?;
 
         // Restore state and ensure buffer is cleared properly
         print!("\x1B[?1049l\x1B[H\x1B[2J");
